@@ -12,21 +12,29 @@ function TeacherDetail() {
             id: 1,
             courseName: '微积分',
             student: '林小小',
-            time: '星期一 17:00',
+            time: '2024-07-18',
             duration: 2,
-            hoursCompleted: 2,
-            hoursPending: 0,
-            financialConfirmed: true,
         },
         {
             id: 2,
             courseName: '微积分',
             student: '张大国',
-            time: '星期一 17:00',
+            time: '2024-07-20',
             duration: 2,
-            hoursCompleted: 0,
-            hoursPending: 2,
-            financialConfirmed: false,
+        },
+        {
+            id: 3,
+            courseName: '线性代数',
+            student: '王小二',
+            time: '2024-08-10',
+            duration: 1,
+        },
+        {
+            id: 4,
+            courseName: '物理',
+            student: '李四',
+            time: '2024-08-16',
+            duration: 3,
         },
         // 更多课程记录...
     ];
@@ -35,17 +43,47 @@ function TeacherDetail() {
         return <div>Loading...</div>;
     }
 
-    // 计算汇总信息
-    const totalCompletedHours = mockClassRecords.reduce((acc, record) => acc + record.hoursCompleted, 0);
-    const totalPendingSalary = 1000; // 模拟的未结薪水总额
+    // 将课程记录按区间分组
+    const groupRecordsByDateRange = (records) => {
+        const grouped = {};
+
+        records.forEach(record => {
+            const date = new Date(record.time);
+            let start, end;
+
+            if (date.getDate() <= 15) {
+                // 上一个月的16号到这个月的15号
+                start = new Date(date.getFullYear(), date.getMonth() - 1, 16);
+                end = new Date(date.getFullYear(), date.getMonth(), 15);
+            } else {
+                // 这个月的16号到下个月的15号
+                start = new Date(date.getFullYear(), date.getMonth(), 16);
+                end = new Date(date.getFullYear(), date.getMonth() + 1, 15);
+            }
+
+            const rangeKey = `${start.getFullYear()} ${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')} - ${end.getFullYear()} ${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+
+            if (!grouped[rangeKey]) {
+                grouped[rangeKey] = { records: [], totalHours: 0 };
+            }
+
+            grouped[rangeKey].records.push(record);
+            grouped[rangeKey].totalHours += record.duration;
+        });
+
+        return grouped;
+    };
+
+    const recordsByPeriod = groupRecordsByDateRange(mockClassRecords);
 
     return (
         <div className="container mt-4">
-            {/* 部分 1: 教师的基本信息 */}
+            {/* 部分 1: 教师的基本信息和编辑按钮 */}
             <h2 className="fw-bold mb-4">{teacher.name} 的课程记录</h2>
             <div className="card mb-4 shadow-sm">
-                <div className="card-header">
+                <div className="card-header d-flex justify-content-between">
                     <h4>教师信息</h4>
+                    <Link to={`/edit-teacher/${teacher.id}`} state={{ teacher }} className="btn btn-warning">编辑教师信息</Link>
                 </div>
                 <div className="card-body">
                     <p><strong>姓名:</strong> {teacher.name}</p>
@@ -61,51 +99,33 @@ function TeacherDetail() {
             </div>
 
             {/* 部分 2: 课程记录表格和汇总信息 */}
-            <div className="d-flex justify-content-between mb-4">
-                <h4>课程记录</h4>
-                <div>
-                    <Link to="/edit-content" className="btn btn-primary me-2">用户更改内容</Link>
-                    <Link to="/add-course" className="btn btn-primary">新增课程</Link>
+            <h4>课程记录</h4>
+
+            {Object.keys(recordsByPeriod).map((period) => (
+                <div key={period} className="mb-4">
+                    <h5>{period} 总上课时数: {recordsByPeriod[period].totalHours} hr</h5>
+                    <table className="table table-bordered text-center">
+                        <thead className="table-light">
+                            <tr>
+                                <th>学生</th>
+                                <th>科目</th>
+                                <th>上课时数</th>
+                                <th>上课日期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {recordsByPeriod[period].records.map((record) => (
+                                <tr key={record.id}>
+                                    <td>{record.student}</td>
+                                    <td>{record.courseName}</td>
+                                    <td>{record.duration} hr</td>
+                                    <td>{record.time}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-
-            <table className="table table-bordered text-center">
-                <thead className="table-light">
-                    <tr>
-                        <th>课名</th>
-                        <th>学生</th>
-                        <th>时间</th>
-                        <th>时长</th>
-                        <th>已上 (小时)</th>
-                        <th>未上 (小时)</th>
-                        <th>财务确认</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {mockClassRecords.map((record) => (
-                        <tr key={record.id}>
-                            <td>{record.courseName}</td>
-                            <td>{record.student}</td>
-                            <td>{record.time}</td>
-                            <td>{record.duration} hr</td>
-                            <td>{record.hoursCompleted} hr</td>
-                            <td>{record.hoursPending} hr</td>
-                            <td>
-                                {record.financialConfirmed ? (
-                                    <i className="bi bi-check-lg text-success"></i>
-                                ) : (
-                                    <i className="bi bi-x-lg text-danger"></i>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            <div className="mt-4">
-                <p><strong>已上总课时:</strong> {totalCompletedHours} hr</p>
-                <p><strong>未结薪水:</strong> {totalPendingSalary} 元</p>
-            </div>
+            ))}
         </div>
     );
 }
