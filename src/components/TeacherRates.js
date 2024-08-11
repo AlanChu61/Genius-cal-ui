@@ -1,43 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function TeacherRates() {
     const location = useLocation();
     const initialSearchTerm = location.state?.searchTerm || ''; // 获取传递的教师姓名
     const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
-    const [rates, setRates] = useState([
-        { id: 1, teacherName: '胡小明', subject: '数学', student: '林小小', hourlyRate: 200 },
-        { id: 2, teacherName: '张三丰', subject: '物理', student: '张大国', hourlyRate: 220 },
-        { id: 3, teacherName: '李四', subject: '化学', student: '王小二', hourlyRate: 210 },
-    ]);
-    const [newRate, setNewRate] = useState({ teacherName: '', subject: '', student: '', hourlyRate: '' });
+    const [rates, setRates] = useState([]);
+    const [newRate, setNewRate] = useState({ teacher_name: '', subject: '', student_name: '', salary_per_hour: '' });
 
-    const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewRate({ ...newRate, [name]: value });
-    };
-
-    const handleAddRate = () => {
-        setRates([...rates, { ...newRate, id: rates.length + 1 }]);
-        setNewRate({ teacherName: '', subject: '', student: '', hourlyRate: '' });
-    };
-
+    // 获取教师课时费列表
     useEffect(() => {
+        const fetchRates = async () => {
+            try {
+                const response = await axios.get('http://127.0.0.1:8000/teacher_rates');
+                setRates(response.data);
+            } catch (error) {
+                console.error('Error fetching rates:', error);
+            }
+        };
+
+        fetchRates();
+
         // 自动执行搜索
         if (initialSearchTerm) {
             setSearchTerm(initialSearchTerm);
         }
     }, [initialSearchTerm]);
 
+    // 更新表单输入值
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewRate({ ...newRate, [name]: value });
+    };
+
+    // 添加新的教师课时费记录
+    const handleAddRate = async () => {
+        try {
+            const response = await axios.post('http://127.0.0.1:8000/teacher_rates', newRate);
+            setRates([...rates, response.data]);
+            setNewRate({ teacher_name: '', subject: '', student_name: '', salary_per_hour: '' });
+        } catch (error) {
+            console.error('Error adding rate:', error);
+        }
+    };
+
+    // 搜索过滤
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
     const filteredRates = rates.filter(rate =>
-        rate.teacherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rate.teacher_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         rate.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rate.student.toLowerCase().includes(searchTerm.toLowerCase())
+        rate.student_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -66,10 +83,10 @@ function TeacherRates() {
                 <tbody>
                     {filteredRates.map(rate => (
                         <tr key={rate.id}>
-                            <td>{rate.teacherName}</td>
+                            <td>{rate.teacher_name}</td>
                             <td>{rate.subject}</td>
-                            <td>{rate.student}</td>
-                            <td>{rate.hourlyRate}</td>
+                            <td>{rate.student_name}</td>
+                            <td>{rate.salary_per_hour}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -81,8 +98,8 @@ function TeacherRates() {
                     type="text"
                     className="form-control mb-2"
                     placeholder="教师姓名"
-                    name="teacherName"
-                    value={newRate.teacherName}
+                    name="teacher_name"
+                    value={newRate.teacher_name}
                     onChange={handleInputChange}
                 />
                 <input
@@ -96,17 +113,17 @@ function TeacherRates() {
                 <input
                     type="text"
                     className="form-control mb-2"
-                    placeholder="学生"
-                    name="student"
-                    value={newRate.student}
+                    placeholder="学生姓名"
+                    name="student_name"
+                    value={newRate.student_name}
                     onChange={handleInputChange}
                 />
                 <input
                     type="number"
                     className="form-control mb-2"
                     placeholder="课时费 (元/小时)"
-                    name="hourlyRate"
-                    value={newRate.hourlyRate}
+                    name="salary_per_hour"
+                    value={newRate.salary_per_hour}
                     onChange={handleInputChange}
                 />
                 <button className="btn btn-success" onClick={handleAddRate}>新增课时费</button>
