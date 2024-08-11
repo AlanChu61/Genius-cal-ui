@@ -1,10 +1,11 @@
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function TeacherDetail() {
     const location = useLocation();
     const { teacher } = location.state || {}; // 通过 location.state 获取教师信息
+    const navigate = useNavigate(); // 用于导航到其他页面
 
     // 模拟课程记录数据
     const mockClassRecords = [
@@ -42,6 +43,11 @@ function TeacherDetail() {
     if (!teacher) {
         return <div>Loading...</div>;
     }
+
+    const handleViewRates = () => {
+        // 跳转到 TeacherRates 页面，并传递教师姓名作为搜索条件
+        navigate('/teacher_rates', { state: { searchTerm: teacher.name } });
+    };
 
     // 将课程记录按区间分组
     const groupRecordsByDateRange = (records) => {
@@ -97,6 +103,10 @@ function TeacherDetail() {
                     )}
                 </div>
             </div>
+
+            <button className="btn btn-primary mb-4" onClick={handleViewRates}>
+                查看课时费记录
+            </button>
 
             {/* 部分 2: 课程记录表格和汇总信息 */}
             <h4>课程记录</h4>
